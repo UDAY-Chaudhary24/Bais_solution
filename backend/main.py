@@ -10,7 +10,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from modes import mode1, mode2, mode3
+from fastapi import Response
 
+@app.head("/health")
+async def health_head():
+    return Response(status_code=200)
+    
 app = FastAPI(
     title="AI Bias Detection Tool",
     description="Detect and mitigate bias in ML datasets and trained models.",
