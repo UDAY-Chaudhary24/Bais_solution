@@ -9,7 +9,10 @@ export default function App() {
   const [health, setHealth] = useState("checking");
 
   useEffect(() => {
-    fetch("http://localhost:8000/health")
+    const API_BASE = import.meta.env.VITE_API_BASE || "";
+
+// inside useEffect:
+fetch(`${API_BASE}/health`)
       .then(r => r.ok ? setHealth("ok") : setHealth("error"))
       .catch(() => setHealth("error"));
   }, []);
