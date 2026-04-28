@@ -1,7 +1,13 @@
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+// ✅ Add this — waits for Render to fully wake up
+async function waitForBackend() {
+  await fetch(`${BASE}/health`);
+  await new Promise(res => setTimeout(res, 1500)); // 1.5s wake buffer
+}
+
 async function post(path, formData) {
-  const res = await fetch(`${BASE}${path}`, { method:"POST", body:formData });
+  const res = await fetch(`${BASE}${path}`, { method: "POST", body: formData });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || res.statusText);
@@ -10,15 +16,23 @@ async function post(path, formData) {
 }
 
 async function postStream(path, formData) {
-  const res = await fetch(`${BASE}${path}`, { method:"POST", body:formData });
+  const res = await fetch(`${BASE}${path}`, { method: "POST", body: formData });
   if (!res.ok) throw new Error(res.statusText);
   return res;
 }
 
 export async function suggestColumns(datasetFile) {
+  await waitForBackend(); // ✅ wake before first real call
   const fd = new FormData();
   fd.append("dataset", datasetFile);
   return post("/mode1/suggest", fd);
+}
+
+export async function getColumns(datasetFile) {
+  await waitForBackend(); // ✅ wake before columns call
+  const fd = new FormData();
+  fd.append("dataset", datasetFile);
+  return post("/mode2/columns", fd);
 }
 
 export async function runAnalysis(datasetFile, modelFile, protectedCol, targetCol) {
@@ -30,13 +44,7 @@ export async function runAnalysis(datasetFile, modelFile, protectedCol, targetCo
   return post("/mode1/analyze", fd);
 }
 
-export async function getColumns(datasetFile) {
-  const fd = new FormData();
-  fd.append("dataset", datasetFile);
-  return post("/mode2/columns", fd);
-}
-
-export async function runAudit(datasetFile, protectedCol, targetCol, threshold=1.0) {
+export async function runAudit(datasetFile, protectedCol, targetCol, threshold = 1.0) {
   const fd = new FormData();
   fd.append("dataset", datasetFile);
   fd.append("protected_col", protectedCol);
@@ -45,7 +53,7 @@ export async function runAudit(datasetFile, protectedCol, targetCol, threshold=1
   return post("/mode2/audit", fd);
 }
 
-export async function runDecouple(datasetFile, protectedCol, targetCol, annotations, clusters, method="residualize") {
+export async function runDecouple(datasetFile, protectedCol, targetCol, annotations, clusters, method = "residualize") {
   const fd = new FormData();
   fd.append("dataset", datasetFile);
   fd.append("protected_col", protectedCol);
